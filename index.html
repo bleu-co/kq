@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en-GB" data-mode="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Kq</title>
+<meta name="theme-color" content="#141414">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Kq">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE   quiet, private, a commonplace of other people's words
+   IDEA    quotes kept under the people who said them, A to Z, patched like a Pd canvas
+   PICTURE the quote in curly marks that hang in the margin, the source below in small mono after a dash
+   COLOUR  two greys only, swapped by a Pd toggle
+   TYPE    Inter for quotes and authors, SF Mono for sources, labels and controls */
+:root{--bg:#141414;--ink:#ebebeb;--soft:rgba(235,235,235,.72);--faint:rgba(235,235,235,.36);--hair:rgba(235,235,235,.14);--mark:rgba(235,235,235,.2);--flash:rgba(235,235,235,.08);color-scheme:dark}
+:root[data-mode=light]{--bg:#ebebeb;--ink:#141414;--soft:rgba(20,20,20,.72);--faint:rgba(20,20,20,.4);--hair:rgba(20,20,20,.15);--mark:rgba(20,20,20,.16);--flash:rgba(20,20,20,.06);color-scheme:light}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0;background:var(--bg);color:var(--ink)}
+body{font:16px/1.7 Inter,-apple-system,'Helvetica Neue',sans-serif;overflow-x:clip;-webkit-font-smoothing:antialiased;transition:background-color .25s,color .25s}
+.mono{font-family:ui-monospace,'SF Mono',SFMono-Regular,Menlo,'DejaVu Sans Mono',monospace;font-size:11px;line-height:1.2;letter-spacing:.03em}
+main{max-width:680px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 76px) max(24px,env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 96px) max(24px,env(safe-area-inset-left))}
+.bar{position:fixed;top:0;right:0;z-index:2;display:flex;align-items:center;gap:6px;padding:calc(env(safe-area-inset-top) + 12px) max(12px,env(safe-area-inset-right)) 0 0}
+#status{color:var(--faint)}
+.tgl{width:44px;height:44px;display:grid;place-items:center;background:none;border:0;padding:0;cursor:pointer;color:var(--ink)}
+.tgl span{width:17px;height:17px;border:1px solid currentColor;position:relative;overflow:hidden}
+.tgl[aria-pressed=true] span::before,.tgl[aria-pressed=true] span::after{content:"";position:absolute;left:50%;top:50%;width:24px;height:1px;background:currentColor;transform:translate(-50%,-50%) rotate(45deg)}
+.tgl[aria-pressed=true] span::after{transform:translate(-50%,-50%) rotate(-45deg)}
+.tgl:focus-visible,.link:focus-visible,.pin:focus-visible{outline:1px solid var(--ink);outline-offset:2px}
+.search{display:flex;align-items:baseline;gap:16px;margin:0 0 34px}
+.search input{flex:1;border:0;border-bottom:1px solid var(--hair);border-radius:0;outline:0;background:transparent;color:var(--ink);padding:4px 0 7px;margin:0;caret-color:var(--ink);-webkit-appearance:none;appearance:none;font-size:13px}
+.search input:focus{border-bottom-color:var(--faint)}
+.search input::-webkit-search-cancel-button{display:none}
+.search input::placeholder{color:var(--faint)}
+#count{color:var(--faint)}
+.entry{margin:0 0 24px}
+.row{display:flex;justify-content:space-between;align-items:center;min-height:16px;margin:0 0 7px}
+.label{color:var(--faint);transition:color .2s}
+.entry:focus-within .label{color:var(--ink)}
+input,textarea{display:block;width:100%;border:0;outline:0;resize:none;background:transparent;color:inherit;font:inherit;padding:0;margin:0;caret-color:var(--ink);border-radius:0;-webkit-appearance:none;appearance:none}
+textarea{overflow:hidden;field-sizing:content;min-height:1.7em;white-space:pre-wrap;overflow-wrap:break-word}
+textarea::placeholder,input::placeholder{color:var(--faint)}
+.box{position:relative;border:1px solid var(--hair);padding:14px 16px 16px;transition:border-color .2s}
+.box:focus-within{border-color:var(--faint)}
+.box::before,.box::after{content:"";position:absolute;left:-1px;width:12px;height:3px;background:var(--faint)}
+.box::before{top:-1px}.box::after{bottom:-1px}
+.attr{display:grid;grid-template-columns:auto 1fr 1fr;align-items:baseline;gap:0 14px;border-top:1px solid var(--hair);margin-top:12px;padding-top:11px;color:var(--faint)}
+.attr input{font-size:12px;color:var(--ink)}
+.attr input::placeholder{color:var(--faint)}
+/* list */
+#list{margin-top:40px}
+.grp{border-top:1px solid var(--hair);padding:16px 0 4px}
+.gh{font-weight:500;margin:0 0 6px;outline:0;white-space:pre-wrap;overflow-wrap:break-word}
+.gh.mono{color:var(--faint);font-weight:400;padding:3px 0 2px}
+.it{position:relative;padding:4px 0 6px;margin:0 0 10px;transition:background-color .6s}
+.it.flash{background:var(--flash)}
+.qt{position:relative;white-space:pre-wrap;overflow-wrap:break-word}
+.om{position:absolute;right:100%;margin-right:.08em;user-select:none}
+.cm{user-select:none}
+.qx,.au,.src{outline:0}
+mark{background:var(--mark);color:inherit;border-radius:2px}
+.meta{display:flex;align-items:baseline;gap:0;margin-top:4px;min-height:14px;color:var(--faint)}
+.attrline{flex:1;line-height:1.5;overflow-wrap:break-word}
+.attrline:focus-within,.au:focus,.src:focus{color:var(--ink)}
+.it:not(.showau) .au,.it:not(.showau) .sep{display:none}
+.it.noa:not(:focus-within) .au,.it.nos:not(:focus-within) .src{display:none}
+.it.noa:not(:focus-within) .sep,.it.nos:not(:focus-within) .sep{display:none}
+.it.showau.noa.nos:not(:focus-within) .dash,.it:not(.showau).nos:not(:focus-within) .dash{display:none}
+.it.noa .au::before,.it.nos .src::before{content:attr(data-ph);color:var(--faint)}
+.pin{display:flex;align-items:center;gap:7px;background:none;border:0;margin:-8px 0;padding:8px 0 8px 12px;color:var(--faint);cursor:pointer;opacity:0;transition:opacity .2s}
+.it:hover .pin,.it:focus-within .pin,.pin[aria-pressed=true]{opacity:1}
+@media(hover:none){.pin{opacity:1}}
+.pin span{width:11px;height:11px;border:1px solid currentColor;position:relative;overflow:hidden}
+.pin[aria-pressed=true]{color:var(--ink)}
+.pin[aria-pressed=true] span::before,.pin[aria-pressed=true] span::after{content:"";position:absolute;left:50%;top:50%;width:16px;height:1px;background:currentColor;transform:translate(-50%,-50%) rotate(45deg)}
+.pin[aria-pressed=true] span::after{transform:translate(-50%,-50%) rotate(-45deg)}
+.pin:hover{color:var(--ink)}
+.empty{color:var(--faint);border-top:1px solid var(--hair);padding:20px 0;margin:0}
+.link{background:none;border:0;padding:6px 0;margin:0;color:var(--faint);cursor:pointer;min-height:28px}
+.link:hover,.link[aria-expanded=true]{color:var(--ink)}
+.foot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 22px;border-top:1px solid var(--hair);padding-top:18px;margin-top:12px;color:var(--faint)}
+.foot .right{display:flex;gap:22px;margin-left:auto}
+.panel{border-top:1px solid var(--hair);padding:30px 0 34px}
+.panel .entry:last-child{margin-bottom:0}
+.field{display:block;margin:0 0 14px}
+.field .mono{display:block;color:var(--faint);margin:0 0 4px}
+.field input{border-bottom:1px solid var(--hair);padding:2px 0 4px}
+.field input:focus{border-bottom-color:var(--faint)}
+.panel textarea::placeholder{font-style:italic}
+.acts{display:flex;flex-wrap:wrap;align-items:center;gap:0 22px}
+.note{color:var(--faint);margin:2px 0 0;line-height:1.6}
+@media(max-width:600px){main{padding-top:calc(env(safe-area-inset-top) + 64px)}.hint{display:none}.search input{font-size:16px}.attr{grid-template-columns:auto 1fr;gap:8px 12px}.attr .s2{grid-column:2}.attr input{font-size:16px}}
+@media(prefers-reduced-motion:reduce){body,.label,.box,.it,.pin{transition:none}}
+</style>
+</head>
+<body>
+<div class="bar">
+  <span id="status" class="mono" aria-live="polite"></span>
+  <button id="tgl" class="tgl" aria-label="Dark mode" aria-pressed="true" title="Toggle light and dark"><span></span></button>
+</div>
+<main>
+  <div class="search">
+    <input id="find" class="mono" type="search" placeholder="search" aria-label="Search quotes" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <span id="count" class="mono" aria-live="polite"></span>
+  </div>
+  <div class="entry">
+    <div class="row"><span class="label mono">add a quote</span></div>
+    <div class="box">
+      <textarea id="cq" rows="1" aria-label="Quote" autocapitalize="sentences" spellcheck="true" enterkeyhint="next"></textarea>
+      <div class="attr mono">
+        <span>—</span>
+        <input id="ca" class="mono" placeholder="author" aria-label="Author" autocomplete="off" autocapitalize="words" spellcheck="false" enterkeyhint="next">
+        <input id="cs" class="mono s2" placeholder="source" aria-label="Source" autocomplete="off" autocapitalize="sentences" spellcheck="true" enterkeyhint="done">
+      </div>
+    </div>
+  </div>
+  <div id="list"></div>
+  <section id="panel" class="panel" hidden aria-label="Sync">
+    <div class="entry">
+      <div class="row"><span class="label mono">sync</span><span id="syncState" class="label mono"></span></div>
+      <div class="box">
+        <div id="setup">
+          <label class="field"><span class="mono">private repository</span><input id="repo" placeholder="username/kq-data" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
+          <label class="field"><span class="mono">access token</span><input id="token" type="password" placeholder="github_pat_…" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
+        </div>
+        <div class="acts">
+          <button id="connectBtn" class="link mono">connect</button>
+          <button id="syncBtn" class="link mono" hidden>sync now</button>
+          <button id="disconnectBtn" class="link mono" hidden>disconnect this device</button>
+        </div>
+        <p id="syncMsg" class="note mono"></p>
+      </div>
+    </div>
+    <div class="entry">
+      <div class="row"><span class="label mono">import</span></div>
+      <div class="box">
+        <textarea id="importText" rows="3" placeholder="Paste text from “copy all as text”" aria-label="Text to import" spellcheck="false"></textarea>
+        <div class="acts"><button id="importBtn" class="link mono">import</button></div>
+      </div>
+    </div>
+  </section>
+  <div class="foot mono">
+    <span class="hint">enter moves on, the last enter saves · cmd + f searches · empty a quote to delete it</span>
+    <span class="right">
+      <button id="syncLink" class="link mono" aria-expanded="false" aria-controls="panel">sync</button>
+      <button id="copyBtn" class="link mono">copy all as text</button>
+    </span>
+  </div>
+</main>
+<script>
+{
+const $=s=>document.querySelector(s);
+const pad=n=>String(n).padStart(2,'0');
+const fmtStamp=t=>{const d=new Date(t);return pad(d.getHours())+':'+pad(d.getMinutes())+' '+pad(d.getDate())+'-'+pad(d.getMonth()+1)+'-'+String(d.getFullYear()).slice(2)};
+/* Kj, Kn, Kt, Kg and Kq share one github.io address, so they share localStorage: every key here starts with "q." */
+const LS={get(k,f){try{const v=localStorage.getItem(k);return v==null?f:JSON.parse(v)}catch(e){return f}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+
+const statusEl=$('#status'),tgl=$('#tgl'),list=$('#list'),countEl=$('#count'),findIn=$('#find');
+const cq=$('#cq'),ca=$('#ca'),cs=$('#cs');
+const setStatus=t=>{statusEl.textContent=t};
+const fits=window.CSS&&CSS.supports&&CSS.supports('field-sizing','content');
+const autosize=t=>{if(fits||t.tagName!=='TEXTAREA')return;t.style.height='auto';t.style.height=t.scrollHeight+'px'};
+const reduce=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- tidying and capitals ---------- */
+const MARKS=/^[\s"'“”‘’„«»]+|[\s"'“”‘’„«»]+$/g;
+const one=s=>String(s||'').replace(/\s+/g,' ').trim();
+const capFirst=s=>s.replace(/\p{L}/u,c=>c.toUpperCase());
+/* names: capitalise each finished word typed in lower case; words with a capital already (McCartney) and particles after the first word (van, de) are left alone */
+const PARTICLES=new Set(['de','da','di','del','della','der','den','des','du','la','le','van','von','y','of','the','and','bin','ibn','al']);
+function capName(s,done){
+  const parts=s.split(' ');
+  return parts.map((w,i)=>{
+    const finished=done||i<parts.length-1;
+    if(!w||!finished||w!==w.toLowerCase())return w;
+    if(i>0&&PARTICLES.has(w))return w;
+    return w.replace(/(^|[-'’.])(\p{L})/gu,(m,p,c)=>p+c.toUpperCase());
+  }).join(' ');
+}
+const tidyQuote=s=>capFirst(String(s||'').replace(/\r\n?/g,'\n').replace(/[ \t]+\n/g,'\n').replace(MARKS,'').trim());
+const tidyAuthor=s=>capName(one(s),true);
+const tidySource=s=>capFirst(one(s));
+/* change a field's text in place without moving the caret (capitals never change the length) */
+function live(el,f){const v=el.value,n=f(v);if(n===v)return;const a=el.selectionStart,b=el.selectionEnd;el.value=n;try{el.setSelectionRange(a,b)}catch(e){}}
+
+/* ---------- local state ----------
+   quote: {q: quote, a: author, s: source, ts: added, u: last change, pin} */
+const clean=(id,v)=>{
+  if(!v||typeof v.q!=='string')return null;
+  const ts=typeof v.ts==='number'?v.ts:0;
+  return {id,q:v.q,a:String(v.a==null?'':v.a),s:String(v.s==null?'':v.s),ts,u:typeof v.u==='number'?v.u:ts,pin:v.pin===true};
+};
+const pack=e=>{const o={q:e.q,a:e.a,s:e.s,ts:e.ts,u:e.u};if(e.pin)o.pin=true;return o};
+let quotes=new Map();
+for(const [k,v] of Object.entries(LS.get('q.quotes',{}))){const e=clean(k,v);if(e)quotes.set(k,e)}
+let dead=LS.get('q.dead',{})||{};
+let mode=LS.get('q.mode','dark'),modeU=LS.get('q.modeU',0);
+let cfg=LS.get('q.sync',null);
+let dirty=LS.get('q.dirty',false);
+let cacheT=null;
+const cacheNow=()=>{clearTimeout(cacheT);cacheT=null;
+  LS.set('q.quotes',Object.fromEntries([...quotes].map(([k,e])=>[k,pack(e)])));
+  LS.set('q.dead',dead);LS.set('q.mode',mode);LS.set('q.modeU',modeU);LS.set('q.dirty',dirty);
+  LS.set('q.draft',[cq.value,ca.value,cs.value])};
+const cacheSoon=()=>{if(!cacheT)cacheT=setTimeout(cacheNow,400)};
+const changed=()=>{dirty=true;cacheSoon();schedulePush()};
+
+const meta=document.querySelector('meta[name=theme-color]');
+const applyMode=()=>{document.documentElement.dataset.mode=mode;tgl.setAttribute('aria-pressed',String(mode==='dark'));meta.content=mode==='dark'?'#141414':'#ebebeb'};
+tgl.addEventListener('click',()=>{mode=mode==='dark'?'light':'dark';modeU=Date.now();applyMode();changed()});
+
+const newId=()=>'q'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function remove(id){quotes.delete(id);nodes.delete(id);dead[id]=Date.now();render();changed()}
+
+/* ---------- search ---------- */
+const fold=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+let terms=[];
+const matches=e=>{if(!terms.length)return true;const t=fold(e.q+' '+e.a+' '+e.s);return terms.every(w=>t.includes(w))};
+const esc=c=>c==='&'?'&amp;':c==='<'?'&lt;':c==='>'?'&gt;':c;
+function marked(text){
+  const f=fold(text);
+  if(!terms.length||f.length!==text.length)return null; /* folding changes a few characters' length; skip marks then */
+  const hit=new Uint8Array(text.length);let any=false;
+  for(const w of terms){let i=0;while((i=f.indexOf(w,i))!==-1){hit.fill(1,i,i+w.length);i+=w.length;any=true}}
+  if(!any)return null;
+  let out='',open=false;
+  for(let i=0;i<text.length;i++){
+    if(hit[i]&&!open){out+='<mark>';open=true}
+    if(!hit[i]&&open){out+='</mark>';open=false}
+    out+=esc(text[i]);
+  }
+  return open?out+'</mark>':out;
+}
+/* editable text: plain while focused, with search marks otherwise */
+const readText=el=>(el.innerText||'').replace(/ /g,' ');
+function show(el,text){
+  if(document.activeElement===el)return;
+  const h=marked(text);
+  if(h!=null){if(el.innerHTML!==h)el.innerHTML=h}
+  else if(el.childElementCount||el.textContent!==text)el.textContent=text;
+}
+findIn.addEventListener('input',()=>{terms=fold(findIn.value).split(/\s+/).filter(Boolean);render()});
+findIn.addEventListener('keydown',ev=>{
+  if(ev.key==='Escape'){findIn.value='';terms=[];render();cq.focus()}
+  if(ev.key==='Enter'){ev.preventDefault();const first=list.querySelector('.qx');if(first)first.focus()}
+});
+document.addEventListener('keydown',ev=>{
+  if((ev.metaKey||ev.ctrlKey)&&!ev.shiftKey&&!ev.altKey&&ev.key.toLowerCase()==='f'){ev.preventDefault();findIn.focus();findIn.select()}
+});
+
+/* ---------- caret in editable text ---------- */
+function caretOf(el){
+  const s=getSelection();if(!s.rangeCount||!el.contains(s.focusNode))return null;
+  const r=document.createRange();r.selectNodeContents(el);r.setEnd(s.focusNode,s.focusOffset);return r.toString().length;
+}
+function placeCaret(el,off){
+  const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);let n,left=off;
+  while((n=w.nextNode())){if(left<=n.length){const r=document.createRange();r.setStart(n,left);r.collapse(true);const s=getSelection();s.removeAllRanges();s.addRange(r);return}left-=n.length}
+  const r=document.createRange();r.selectNodeContents(el);r.collapse(false);const s=getSelection();s.removeAllRanges();s.addRange(r);
+}
+function editable(el,label,multi){
+  try{el.contentEditable='plaintext-only'}catch(e){}
+  if(el.contentEditable!=='plaintext-only')el.contentEditable='true';
+  el.setAttribute('role','textbox');el.setAttribute('aria-label',label);if(multi)el.setAttribute('aria-multiline','true');
+  el.spellcheck=true;
+  /* drop the search marks while typing, keeping the caret where it was clicked */
+  el.addEventListener('focus',()=>{if(!el.childElementCount)return;const c=caretOf(el);el.textContent=readText(el);if(c!=null)placeCaret(el,c)});
+  el.addEventListener('paste',ev=>{ev.preventDefault();let t=(ev.clipboardData||window.clipboardData).getData('text/plain')||'';if(!multi)t=t.replace(/\s+/g,' ');document.execCommand('insertText',false,t)});
+  el.addEventListener('keydown',ev=>{
+    if(ev.key!=='Enter'||ev.isComposing)return;
+    ev.preventDefault();
+    if(multi&&ev.shiftKey&&!ev.metaKey&&!ev.ctrlKey){document.execCommand('insertText',false,'\n');return}
+    el.blur();
+  });
+}
+
+/* ---------- adding ---------- */
+function flash(id){
+  const n=nodes.get(id);if(!n)return;
+  const r=n.el.getBoundingClientRect();
+  if(r.top<0||r.bottom>innerHeight)n.el.scrollIntoView({behavior:reduce()?'auto':'smooth',block:'center'});
+  n.el.classList.add('flash');setTimeout(()=>n.el.classList.remove('flash'),1400);
+}
+function save(){
+  const q=tidyQuote(cq.value),a=tidyAuthor(ca.value),s=tidySource(cs.value);
+  if(!q){if(a||s){setStatus('write the quote first')}cq.focus();return}
+  const have=[...quotes.values()].find(e=>fold(e.q)===fold(q));
+  if(have){setStatus('already here');cq.value=ca.value=cs.value='';autosize(cq);cacheNow();cq.focus({preventScroll:true});flash(have.id);return}
+  const id=newId(),ts=Date.now();
+  delete dead[id];
+  quotes.set(id,{id,q,a,s,ts,u:ts,pin:false});
+  cq.value=ca.value=cs.value='';autosize(cq);
+  if(terms.length&&!matches(quotes.get(id))){findIn.value='';terms=[]}
+  render();changed();cacheNow();
+  cq.focus({preventScroll:true});flash(id);setStatus(cfg?'':'saved');
+}
+cq.addEventListener('input',()=>{live(cq,capFirst);autosize(cq);cacheSoon()});
+ca.addEventListener('input',()=>{live(ca,v=>capName(v,false));cacheSoon()});
+cs.addEventListener('input',()=>{live(cs,capFirst);cacheSoon()});
+ca.addEventListener('blur',()=>live(ca,v=>capName(v,true)));
+cq.addEventListener('keydown',ev=>{
+  if(ev.key!=='Enter'||ev.isComposing)return;
+  if(ev.metaKey||ev.ctrlKey){ev.preventDefault();save();return}
+  if(ev.shiftKey)return; /* shift + enter: a new line inside the quote */
+  ev.preventDefault();ca.focus();
+});
+ca.addEventListener('keydown',ev=>{
+  if(ev.key!=='Enter'||ev.isComposing)return;
+  ev.preventDefault();live(ca,v=>capName(v,true));
+  if(ev.metaKey||ev.ctrlKey)save();else cs.focus();
+});
+cs.addEventListener('keydown',ev=>{if(ev.key==='Enter'&&!ev.isComposing){ev.preventDefault();save()}});
+{const d=LS.get('q.draft',null);if(Array.isArray(d)){[cq.value,ca.value,cs.value]=d.map(x=>String(x||''))}}
+
+/* ---------- rendering ---------- */
+const nodes=new Map(),heads=new Map();
+let structKey=null;
+function fill(n,e,showAu){
+  show(n.qx,e.q);show(n.au,e.a);show(n.src,e.s);
+  n.el.classList.toggle('showau',showAu);
+  n.el.classList.toggle('noa',!(document.activeElement===n.au?readText(n.au):e.a).trim());
+  n.el.classList.toggle('nos',!(document.activeElement===n.src?readText(n.src):e.s).trim());
+  n.pin.setAttribute('aria-pressed',String(e.pin));
+  n.pin.setAttribute('aria-label',e.pin?'Unpin quote':'Pin quote to the top');
+  n.pin.title=e.pin?'Pinned to the top':'Pin to the top';
+}
+function nodeFor(e,showAu){
+  let n=nodes.get(e.id);
+  if(!n){
+    const id=e.id;
+    const el=document.createElement('div');el.className='it';
+    const qt=document.createElement('div');qt.className='qt';
+    const om=document.createElement('span');om.className='om';om.textContent='“';om.setAttribute('aria-hidden','true');
+    const qx=document.createElement('span');qx.className='qx';
+    const cm=document.createElement('span');cm.className='cm';cm.textContent='”';cm.setAttribute('aria-hidden','true');
+    qt.append(om,qx,cm);
+    const mt=document.createElement('div');mt.className='meta mono';
+    const line=document.createElement('div');line.className='attrline';
+    const dash=document.createElement('span');dash.className='dash';dash.textContent='— ';
+    const au=document.createElement('span');au.className='au';au.dataset.ph='author';
+    const sep=document.createElement('span');sep.className='sep';sep.textContent=', ';
+    const src=document.createElement('span');src.className='src';src.dataset.ph='source';
+    line.append(dash,au,sep,src);
+    const pin=document.createElement('button');pin.className='pin mono';pin.type='button';
+    pin.append('pin',document.createElement('span'));
+    mt.append(line,pin);el.append(qt,mt);
+    editable(qx,'Quote',true);editable(au,'Author');editable(src,'Source');
+    for(const f of [qx,au,src])f.dataset.id=id;
+    const edit=(f,v)=>{const cur=quotes.get(id);if(!cur)return;cur[f]=v;cur.u=Date.now();changed()};
+    qx.addEventListener('input',()=>{const t=readText(qx);if(t.trim())edit('q',t)});
+    au.addEventListener('input',()=>{edit('a',readText(au));el.classList.toggle('noa',!readText(au).trim())});
+    src.addEventListener('input',()=>{edit('s',readText(src));el.classList.toggle('nos',!readText(src).trim())});
+    qx.addEventListener('keydown',ev=>{if(ev.key==='Enter'&&(ev.metaKey||ev.ctrlKey)){ev.preventDefault();qx.blur()}});
+    const done=()=>{cacheNow();setTimeout(()=>{if(!el.contains(document.activeElement))render()})};
+    qx.addEventListener('blur',()=>{
+      const cur=quotes.get(id);if(!cur)return;
+      const q=tidyQuote(readText(qx));
+      if(!q){remove(id);return}
+      if(q!==cur.q){cur.q=q;cur.u=Date.now();changed()}
+      qx.textContent='';show(qx,cur.q);done();
+    });
+    au.addEventListener('blur',()=>{
+      const cur=quotes.get(id);if(!cur)return;const a=tidyAuthor(readText(au));
+      if(a!==cur.a){cur.a=a;cur.u=Date.now();changed()}
+      au.textContent='';show(au,cur.a);done();
+    });
+    src.addEventListener('blur',()=>{
+      const cur=quotes.get(id);if(!cur)return;const s=tidySource(readText(src));
+      if(s!==cur.s){cur.s=s;cur.u=Date.now();changed()}
+      src.textContent='';show(src,cur.s);done();
+    });
+    pin.addEventListener('click',()=>{const cur=quotes.get(id);if(!cur)return;cur.pin=!cur.pin;cur.u=Date.now();render();changed();flash(id)});
+    n={el,qx,au,src,pin};nodes.set(id,n);
+  }
+  fill(n,e,showAu);
+  return n.el;
+}
+/* an author heading; editing it renames that author on every one of their quotes */
+function headFor(k,name){
+  let h=heads.get(k);
+  if(!h){
+    h=document.createElement('div');h.className='gh';
+    editable(h,'Author, renames all their quotes');
+    h.addEventListener('blur',()=>{
+      const a=tidyAuthor(readText(h));
+      const own=[...quotes.values()].filter(e=>!e.pin&&fold(one(e.a))===k);
+      if(a&&own.some(e=>e.a!==a)){const t=Date.now();own.forEach(e=>{e.a=a;e.u=t});changed()}
+      h.textContent='';show(h,a||name);cacheNow();setTimeout(render);
+    });
+    heads.set(k,h);
+  }
+  show(h,name);
+  return h;
+}
+const coll=new Intl.Collator('en-GB',{sensitivity:'base',numeric:true});
+const newest=(a,b)=>b.ts-a.ts;
+/* pinned first, then authors A to Z, each author's quotes newest first, quotes with no author last */
+function arrange(all){
+  const pinned=all.filter(e=>e.pin).sort(newest);
+  const groups=new Map();
+  for(const e of all){if(e.pin)continue;const k=fold(one(e.a));if(!groups.has(k))groups.set(k,[]);groups.get(k).push(e)}
+  const gs=[...groups].map(([k,items])=>{items.sort(newest);const latest=[...items].sort((a,b)=>b.u-a.u)[0];return {k,name:one(latest.a),items}});
+  gs.sort((x,y)=>(!x.k)-(!y.k)||coll.compare(x.name,y.name));
+  return {pinned,gs};
+}
+function render(){
+  const act=document.activeElement,actId=act&&act.dataset?act.dataset.id:null;
+  const all=[...quotes.values()].filter(e=>e.id===actId||matches(e));
+  const {pinned,gs}=arrange(all);
+  const total=quotes.size,n=all.length;
+  countEl.textContent=terms.length?(n===1?'1 found':n+' found'):(total?(total===1?'1 quote':total+' quotes'):'');
+  const key=terms.join(' ')+'|'+pinned.map(e=>e.id).join(',')+'|'+gs.map(g=>g.k+':'+g.items.map(e=>e.id).join(',')).join(';');
+  if(key===structKey){pinned.forEach(e=>nodeFor(e,true));gs.forEach(g=>{if(g.k)headFor(g.k,g.name);g.items.forEach(e=>nodeFor(e,!g.k))});return}
+  structKey=key;
+  const caret=act&&act.isContentEditable?caretOf(act):null;
+  const els=[];
+  const group=(title,items,showAu,k)=>{
+    const sec=document.createElement('section');sec.className='grp';
+    let h;
+    if(k){h=headFor(k,title)}else{h=document.createElement('div');h.className='gh mono';h.textContent=title}
+    sec.append(h,...items.map(e=>nodeFor(e,showAu)));
+    els.push(sec);
+  };
+  if(pinned.length)group('pinned',pinned,true,null);
+  for(const g of gs)group(g.k?g.name:'no author',g.items,!g.k,g.k||null);
+  if(!els.length){const p=document.createElement('p');p.className='empty mono';p.textContent=terms.length?'nothing found':'no quotes yet';els.push(p)}
+  list.replaceChildren(...els);
+  for(const id of [...nodes.keys()])if(!quotes.has(id))nodes.delete(id);
+  const keep=new Set(gs.map(g=>g.k));for(const k of [...heads.keys()])if(!keep.has(k)&&heads.get(k)!==act)heads.delete(k);
+  if(act&&act.isConnected&&document.activeElement!==act){act.focus({preventScroll:true});if(caret!=null)placeCaret(act,caret)}
+}
+
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){cacheNow();if(dirty)sync()}
+  else sync();
+});
+window.addEventListener('pagehide',cacheNow);
+window.addEventListener('online',()=>sync());
+setInterval(()=>{if(!document.hidden)sync()},60000);
+
+/* copy format:  “The quote.”
+                 — Author, Source
+                 pinned            (only when pinned) */
+function plainText(){
+  const {pinned,gs}=arrange([...quotes.values()]);
+  return [...pinned,...gs.flatMap(g=>g.items)].map(e=>{
+    const by=[e.a.trim(),e.s.trim()].filter(Boolean).join(', ');
+    return '“'+e.q.trim()+'”'+(by?'\n— '+by:'')+(e.pin?'\npinned':'');
+  }).join('\n\n');
+}
+$('#copyBtn').addEventListener('click',async()=>{
+  try{await navigator.clipboard.writeText(plainText());setStatus('copied')}catch(e){setStatus('copy refused')}
+});
+
+/* ---------- sync: one JSON file in a private GitHub repository ---------- */
+const API='https://api.github.com',FILE='quotes.json';
+let busy=false,again=false,pushT=null;
+function schedulePush(){if(!cfg)return;clearTimeout(pushT);pushT=setTimeout(()=>sync(),3000)}
+
+const snapshot=()=>({v:1,mode,modeU,quotes:Object.fromEntries([...quotes].filter(([,e])=>e.q.trim()).map(([k,e])=>[k,pack(e)])),deleted:{...dead}});
+function normal(d){
+  const out={v:1,mode:'dark',modeU:0,quotes:{},deleted:{}};
+  if(!d||typeof d!=='object')return out;
+  if(d.mode==='dark'||d.mode==='light'){out.mode=d.mode;out.modeU=+d.modeU||0}
+  for(const [k,v] of Object.entries(d.quotes||{})){const e=clean(k,v);if(e)out.quotes[k]=pack(e)}
+  for(const [k,t] of Object.entries(d.deleted||{}))if(typeof t==='number')out.deleted[k]=t;
+  return out;
+}
+function merge(a,b){
+  const E={},D={...a.deleted};
+  for(const [k,t] of Object.entries(b.deleted))D[k]=Math.max(D[k]||0,t);
+  for(const src of [a.quotes,b.quotes])for(const [k,e] of Object.entries(src))if(!E[k]||e.u>E[k].u)E[k]=e;
+  for(const k of Object.keys(E))if(D[k]!=null){if(E[k].u<=D[k])delete E[k];else delete D[k]}
+  const m=b.modeU>a.modeU?b:a;
+  return {v:1,mode:m.mode,modeU:m.modeU,quotes:E,deleted:D};
+}
+const sorted=v=>Array.isArray(v)?v.map(sorted):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,sorted(v[k])])):v;
+const serial=o=>JSON.stringify(sorted(o),null,1)+'\n';
+function adopt(m){
+  const cur=merge(snapshot(),m);
+  const act=document.activeElement,actId=act&&act.dataset?act.dataset.id:null;
+  const next=new Map();
+  for(const [k,e] of Object.entries(cur.quotes))next.set(k,clean(k,e));
+  /* a quote being typed over keeps what is on screen */
+  if(actId&&quotes.has(actId)&&!cur.deleted[actId])next.set(actId,quotes.get(actId));
+  quotes=next;dead=cur.deleted;
+  if(cur.mode!==mode){mode=cur.mode;applyMode()}
+  modeU=cur.modeU;
+  render();
+}
+const enc=s=>{const b=new TextEncoder().encode(s);let o='';for(let i=0;i<b.length;i+=0x8000)o+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000));return btoa(o)};
+const dec=s=>{const r=atob(s.replace(/\s/g,''));const b=new Uint8Array(r.length);for(let i=0;i<r.length;i++)b[i]=r.charCodeAt(i);return new TextDecoder().decode(b)};
+class SyncError extends Error{constructor(msg,fatal){super(msg);this.fatal=fatal}}
+async function gh(c,method,path,body){
+  let r;
+  try{r=await fetch(API+'/repos/'+c.repo+path,{method,cache:'no-store',headers:{Authorization:'Bearer '+c.token,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined})}
+  catch(e){throw new SyncError('offline, saved here')}
+  if(r.status===401)throw new SyncError('token refused',true);
+  if(r.status===403&&r.headers.get('x-ratelimit-remaining')==='0')throw new SyncError('github busy, will retry');
+  return r;
+}
+async function pull(c){
+  const r=await gh(c,'GET','/contents/'+FILE);
+  if(r.status===404)return {sha:null,data:null};
+  if(!r.ok)throw new SyncError(r.status===403?'token cannot read this repository':'sync error '+r.status,r.status===403);
+  const j=await r.json();
+  let b64=j.content||'';
+  if(!b64&&j.size>0){const b=await gh(c,'GET','/git/blobs/'+j.sha);if(!b.ok)throw new SyncError('sync error '+b.status);b64=(await b.json()).content||''}
+  let data=null;try{data=b64?JSON.parse(dec(b64)):null}catch(e){throw new SyncError('quotes.json is not readable',true)}
+  return {sha:j.sha,data};
+}
+async function sync(){
+  if(!cfg)return;
+  if(busy){again=true;return}
+  busy=true;clearTimeout(pushT);
+  const c=cfg;
+  try{
+    setStatus('syncing');
+    for(let i=0;;i++){
+      const {sha,data}=await pull(c);
+      const remote=normal(data);
+      dirty=false;
+      const merged=merge(snapshot(),remote);
+      adopt(merged);
+      const out=serial(merged);
+      if(data&&out===serial(remote))break;
+      const r=await gh(c,'PUT','/contents/'+FILE,{message:'quotes '+fmtStamp(Date.now()),content:enc(out),...(sha?{sha}:{})});
+      if(r.ok)break;
+      if((r.status===409||r.status===422)&&i<4)continue;
+      throw new SyncError(r.status===403||r.status===404?'token cannot write to this repository':'sync error '+r.status,r.status===403||r.status===404);
+    }
+    if(cfg===c){setStatus('synced');syncMsg('Last synced '+fmtStamp(Date.now())+'.')}
+  }catch(e){
+    dirty=true;
+    setStatus(e.message||'offline, saved here');
+    if(e.fatal)syncMsg('Sync paused: '+e.message+'. Check the repository name and token, then connect again.');
+  }finally{
+    busy=false;cacheNow();
+    if(again){again=false;sync()}
+  }
+}
+
+/* ---------- sync panel ---------- */
+const panel=$('#panel'),syncLink=$('#syncLink'),repoIn=$('#repo'),tokenIn=$('#token');
+const syncMsg=t=>{$('#syncMsg').textContent=t};
+function panelUi(){
+  $('#setup').hidden=!!cfg;
+  $('#connectBtn').hidden=!!cfg;
+  $('#syncBtn').hidden=$('#disconnectBtn').hidden=!cfg;
+  $('#syncState').textContent=cfg?cfg.repo:'not connected';
+  if(!cfg){syncMsg('Quotes are kept on this device only. Connect a private GitHub repository to sync between devices.');setStatus('this device only')}
+}
+syncLink.addEventListener('click',()=>{
+  panel.hidden=!panel.hidden;syncLink.setAttribute('aria-expanded',String(!panel.hidden));
+  if(!panel.hidden)panel.scrollIntoView({behavior:reduce()?'auto':'smooth',block:'start'});
+});
+$('#connectBtn').addEventListener('click',async()=>{
+  const repo=repoIn.value.trim().replace(/^https?:\/\/github\.com\//,'').replace(/\.git$/,'').replace(/\/+$/,'');
+  const token=tokenIn.value.trim();
+  if(!/^[\w.-]+\/[\w.-]+$/.test(repo)){syncMsg('Write the repository as username/name.');return}
+  if(!token){syncMsg('Paste the access token.');return}
+  syncMsg('Checking…');
+  const c={repo,token};
+  try{
+    const r=await gh(c,'GET','');
+    if(r.status===404||r.status===403){syncMsg('That repository was not found, or the token cannot see it.');return}
+    if(!r.ok){syncMsg('GitHub answered '+r.status+'. Try again.');return}
+    const j=await r.json();
+    if(!j.private){syncMsg('That repository is public. Make it private first, so nobody else can read your quotes.');return}
+  }catch(e){syncMsg(e.fatal?'GitHub refused that token.':'Could not reach GitHub. Check the connection.');return}
+  cfg=c;LS.set('q.sync',cfg);tokenIn.value='';dirty=true;panelUi();syncMsg('Connected. Syncing…');sync();
+});
+$('#syncBtn').addEventListener('click',()=>sync());
+$('#disconnectBtn').addEventListener('click',()=>{
+  cfg=null;LS.del('q.sync');panelUi();
+  syncMsg('Disconnected. Quotes stay on this device and in the repository.');
+});
+
+/* import: blocks from "copy all as text"; a last line starting with a dash is the author and source */
+function parseText(t){
+  const blocks=t.replace(/\r\n?/g,'\n').split(/\n\s*\n/).map(b=>b.split('\n').map(l=>l.trim()).filter(Boolean)).filter(b=>b.length);
+  const out=[];
+  for(const b of blocks){
+    let pin=false,a='',s='';
+    if(b.length>1&&b[b.length-1].toLowerCase()==='pinned'){pin=true;b.pop()}
+    const last=b[b.length-1];
+    if(b.length>1&&/^(—|–|--?)\s*/.test(last)){
+      b.pop();
+      const by=last.replace(/^(—|–|--?)\s*/,'');
+      const m=by.match(/^(.+?),\s+(?!(?:Jr|Sr|Jnr|Snr)\b\.?)(.+)$/);
+      if(m){a=m[1];s=m[2]}else a=by;
+    }
+    out.push({q:b.join('\n'),a,s,pin});
+  }
+  return out;
+}
+$('#importBtn').addEventListener('click',()=>{
+  const ta=$('#importText'),items=parseText(ta.value);
+  if(!items.length){setStatus('nothing to import');return}
+  let added=0,ts=Date.now()-items.length;
+  for(const it of items){
+    ts++;
+    const q=tidyQuote(it.q);if(!q)continue;
+    if([...quotes.values()].some(e=>fold(e.q)===fold(q)))continue;
+    const id=newId()+added;
+    quotes.set(id,{id,q,a:tidyAuthor(it.a),s:tidySource(it.s),ts,u:Date.now(),pin:it.pin});added++;
+  }
+  ta.value='';autosize(ta);render();changed();
+  setStatus(added?'imported '+added:'already here');
+});
+
+applyMode();render();panelUi();autosize(cq);cq.focus({preventScroll:true});
+if(cfg)sync();
+if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+}
+</script>
+</body>
+</html>
